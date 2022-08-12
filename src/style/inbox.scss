@@ -1,0 +1,94 @@
+$myPosition: center;
+
+.incomingMsgContent .msg {
+    padding: 10px 20px;
+    background: #e1e1e1;
+    color: #3d3d3d;
+    border-radius: 0 15px 15px;
+}
+.outgoingMsgContent .msg {
+    padding: 10px 20px;
+    border-radius: 10px 10px 0;
+    background: #6380e3;
+    color: #fff;
+}
+.userImg {
+    width: 40px;
+    height: 40px;
+    text-align: $myPosition;
+    background: #dadada;
+    font-weight: 600;
+    color: #000 !important;
+    border-radius: 50%;
+    text-transform: uppercase;
+    padding: 0;
+    display: flex;
+    justify-content:$myPosition ;
+    align-items: $myPosition;
+}
+img {
+    max-width: 100%;
+}
+
+.logngFormSec, .chatSection {
+    background: #f1f1f1;
+    background-size: cover;
+	height: auto;
+}
+.chatSection {
+    padding: 30px 0px;
+}
+.chatWrp {
+    background: #fff;
+    box-shadow: 0px 0px 8px #ccc;
+    border-radius: 7px;
+    position: relative;
+    overflow: hidden;
+}
+.wholeChat {
+    /* height: calc(100vh - 180px); */
+    /* overflow: auto; */
+    padding: 20px 50px;
+}
+.poweredBy {
+    padding: 12px 50px;
+    border-bottom: 1px solid #ccc;
+    font-size: 14px;
+    /* position: sticky; */
+    top: 0px;
+    left: 0px;
+    width: 100%;
+    text-align: initial;
+}
+.gap-20 {
+    gap: 20px;
+}
+.chatType {
+    border-top: solid 1px #ccc;
+    background: #fff;
+    padding: 10px 50px;
+    position: relative;
+}
+.chatType input {
+    padding: 5px;
+    height: auto;
+}
+.chatType .transBtn {
+    position: absolute;
+    right: 50px;
+    bottom: 9px;
+    font-size: 24px;
+    padding: 0;
+    color: #6380e3;
+    z-index: 9;
+}
+.transInput {
+    border: none;
+    outline: none;
+    box-shadow: none !important;
+}
+.transBtn {
+    background: transparent;
+    border: none;
+    outline: none;
+}
