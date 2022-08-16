@@ -1,12 +1,11 @@
 import './App.scss';
-import Inbox from "./Pages/Inbox"
+import SurveyChatBox from "./Pages/SurveyChatBox"
 
 function App() {
   return (
     <div className="App">
-      <Inbox/>
+      <SurveyChatBox/>
     </div>
   );
 }
-
 export default App;

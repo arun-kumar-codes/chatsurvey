@@ -1,11 +1,11 @@
 import React from "react";
-import style from "../style/inbox.scss";
+import style from "../style/SurveyChatBox.scss";
 import chat from "../utills/chatjson";
 import classNames from "classnames";
 import Star from "../generic/Star";
 import OptionBox from "../generic/OptionBox";
 import Confirmation from "../generic/ConfermationBox";
-const Inbox = () => {
+const SurveyChatBox = () => {
   const userImg = classNames({
     userImg: chat.image,
   });
@@ -62,4 +62,4 @@ const Inbox = () => {
     </div>
   );
 };
-export default Inbox;
+export default SurveyChatBox;
