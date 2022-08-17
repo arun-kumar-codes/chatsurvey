@@ -1,10 +1,12 @@
 import React from "react";
-import style from "../style/optionBox.scss"
+import style from "../style/optionBox.scss";
 
-const Confirmation = () => {
-    return(
-        <div style={{width : "100px",height : "100px",background : "black"}}>
-        </div>
-    )
-}
-export default Confirmation
+const Confirmation = (props) => {
+  return (
+      <div className={"outgoingMsg d-flex align-items-start justify-content-end mb-2"}>
+     <div className={"outgoingMsgContent" }></div>
+     <div className="msg">{props.option}</div>
+      </div>
+  );
+};
+export default Confirmation;
