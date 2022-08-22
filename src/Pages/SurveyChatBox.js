@@ -1,345 +1,205 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import style from "../style/SurveyChatBox.scss";
 import chat from "../utills/chatjson";
 import classNames from "classnames";
 import Star from "../generic/Star";
 import OptionBox from "../generic/OptionBox";
 import avatarImg from "../assets/chat1.png";
+import typingGif from "../assets/typing.gif";
+import axios from "axios";
+import { useNavigate } from "react-router-dom";
 const SurveyChatBox = () => {
+  const [alldata, setAllData] = useState();
   const [data, dataSet] = useState();
-  const [answer, setAnswer] = useState("");
-  const [name, setName] = useState();
-  const [Q2ans, setQ2] = useState();
-  const [question, setQuestion] = useState();
-  const [questionNumber, setQuestionNumber] = useState(0);
-  const [prevAnswer, setPrevAnswer] = useState({
-    q0: "",
-    q1: "",
-    q2: "",
-    q3: "",
-    q4: "",
-    q5: "",
-    q6: "",
-    q7: "",
-    q8: "",
+  const [dataLength, SetDataLength] = useState();
+  const [answer, setAnswer] = useState();
+  const [answers, setAnswers] = useState({});
+  const [questionNumber, setQuestionNumber] = useState(1);
+  const [question, setQuestion] = useState(1);
+  const [typing, setSettyping] = useState({});
+  const navigate = useNavigate();
+  const messagesEndRef = useRef(null);
+
+  const userImg = classNames({
+    userImg: chat.qtype === "stextbox",
   });
 
   useEffect(() => {
     async function fetchMyAPI() {
-      let response = await fetch(
+      let response = await axios.get(
         "http://developers.frameanalytics.com/api/question/JIwZkAfZLcQ7LzwrGJLS"
       );
-      response = await response.json();
-      dataSet(response);
-      setQuestion(response?.surveydata[questionNumber]);
+      setAllData(response.data.surveydata);
+      SetDataLength(response?.data?.surveydata.length);
+      setQuestion(response?.data?.surveydata[questionNumber - 1]);
+      let data = response.data.surveydata.splice(0, questionNumber);
+      dataSet(data);
     }
     fetchMyAPI();
   }, [questionNumber]);
-  const userImg = classNames({
-    userImg: chat.qtype === "stextbox",
-  });
-  const handleClick = (e) => {
-    setName(answer);
-    setPrevAnswer({ ...prevAnswer, [`q${questionNumber}`]: answer });
-    setQuestionNumber(questionNumber + 1);
-    setAnswer("");
+
+  const scrollToMyRef = () => {
+    const scroll =
+      messagesEndRef.current.scrollHeight - messagesEndRef.current.clientHeight;
+    messagesEndRef.current.scrollTo(0, scroll);
   };
 
-    console.log(data ,"uasgfjhsdjgkf")
+  const handleClick = () => {
+    if (answer) {
+      setQuestionNumber((prev) => prev + 1);
+      setAnswers({
+        ...answers,
+        [question.ques_custom_no]: answer,
+      });
+      setAnswer("");
+    }
+  };
 
-  return (
+  const handleChange = (e) => {
+    setAnswer(e.target.value);
+    setSettyping({
+      [question.ques_custom_no]: "start_typing",
+    });
+  };
+  
+  const makeid = (length) => {
+    var result = "";
+    var characters =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    var charactersLength = characters.length;
+    for (var i = 0; i < length; i++) {
+      result += characters.charAt(Math.floor(Math.random() * charactersLength));
+    }
+    return result;
+  };
+  
+  const handleSubmit = async () => {
+    let answersObj = {}
+    for(let key in answers){
+      let newKey = `answer_${key}`
+      answersObj[newKey] = answers[key]
+    }
+    let ans = {
+      survey_case_id: makeid(20),
+      username: "Piyush Garg",
+      survey_id: "JIwZkAfZLcQ7LzwrGJLS",
+      json_data: JSON.stringify({
+        section_title_url: "ASnivvjR5J1k4yNwydN8",
+       ...answersObj
+      }),
+    };
+    try {
+      const res = await axios.post(
+        "http://developers.frameanalytics.com/api/chatAnswer",
+        ans
+        );
+        if (res.status == 200) {
+          navigate("thankyou");
+        }
+      } catch (error) {
+        console.log(error);
+      }
+    };
+    
+    useEffect(() => {
+      scrollToMyRef();
+    }, [questionNumber]);
+
+    const handleSkip = () => {
+        setQuestionNumber((prev) => prev + 1);
+        setAnswers({
+          ...answers,
+          [question.ques_custom_no]: "SKIPED",
+        });
+        setAnswer("");
+    };
+
+    return (
     <div>
       <section className="chatSection">
         <div className="container">
           <div className="chatWrp">
             <div className="poweredBy">Powered by Surveypoint</div>
-            <div className="wholeChat">
+            <div className="wholeChat" style={{ width: "100%", height: "95%" }}>
               <div
-                className={"incomingMsg d-flex gap-20 align-items-start mb-2"}
+                style={{
+                  paddingBottom: "40px",
+                  height: "80vh",
+                  overflowY: "scroll",
+                }}
+                ref={messagesEndRef}
               >
-                <div className={userImg}>
-                  <img src={avatarImg} alt="" />
-                </div>
-                <div className={"incomingMsgContent"}>
-                  {/* <div className={chat.qtype? "incomingMsgContent" :" outgoingMsgContent" }> */}
-                  <div className="msg">
-                    {data?.surveydata[0]?.ques_title_json}
-                  </div>
+                {data?.map((q, index) => {
+                  return (
+                    <>
+                      <div
+                        className={
+                          "incomingMsg d-flex gap-20 align-items-start mb-2"
+                        }
+                        key={index}
+                      >
+                        <div className={userImg}>
+                          <img src={avatarImg} alt="" />
+                        </div>
+                        <div className={"incomingMsgContent"}>
+                          <div style={{ display: "flex" }}>
+                            <div className="msg">{q.ques_title_json}</div>
+                            {q?.validation?.is_require && !answers[q?.ques_custom_no] && (
+                              <button
+                                style={{
+                                  marginLeft: "10px",
+                                  border: "none",
+                                  padding: "10px 20px",
+                                  borderRadius: "10px",
+                                  background: "#6380e3",
+                                  color: "#fff",
+                                }}
+                                onClick={handleSkip}
+                              >
+                                SKIP
+                              </button>
+                            )}
+                          </div>
 
-                  {chat.incoming && chat.star ? (
-                    <Star className="listInline mb-0 mt-1" />
-                  ) : chat.star ? (
-                    <Star className="listInline mb-0 colorRatings" />
-                  ) : (
-                    ""
-                  )}
-                </div>
+                          {chat.incoming && chat.star ? (
+                            <Star className="listInline mb-0 mt-1" />
+                          ) : chat.star ? (
+                            <Star className="listInline mb-0 colorRatings" />
+                          ) : (
+                            ""
+                          )}
+                        </div>
+                      </div>
+                      {typing[q?.ques_custom_no] == "start_typing" && answer && (
+                        <div
+                          className="incomingMsgContent d-flex align-items-start justify-content-end mb-2"
+                          style={{ marginRight: "4%" }}
+                        >
+                          <img
+                            src={typingGif}
+                            style={{ width: "100px", height: "50px" }}
+                          />
+                        </div>
+                      )}
+
+                      {answers[q?.ques_custom_no] && (
+                        <div
+                          className="incomingMsgContent d-flex align-items-start justify-content-end mb-2"
+                          style={{ marginRight: "4%" }}
+                        >
+                          {answers[q?.ques_custom_no] == "SKIPED" ?<div className="skipmsg">{answers[q?.ques_custom_no]}</div> :<div className="msg">
+                            {answers[q?.ques_custom_no]}
+                          </div>}
+                        </div>
+                      )}
+                    </>
+                  );
+                })}
               </div>
-              {prevAnswer.q0 && (
-                <div
-                  className="incomingMsgContent d-flex align-items-start justify-content-end mb-2"
-                  style={{ marginRight: "4%" }}
-                >
-                  <div className="msg">{prevAnswer.q0}</div>
-                </div>
-              )}
-
-              {prevAnswer.q0 && (
-                <>
-                  <div
-                    className={
-                      "incomingMsg d-flex gap-20 align-items-start mb-2"
-                    }
-                  >
-                    <div className={userImg}>
-                      <img src={avatarImg} alt="" />
-                    </div>
-                    <div className={"incomingMsgContent"}>
-                      {/* <div className={chat.qtype? "incomingMsgContent" :" outgoingMsgContent" }> */}
-                      <div className="msg">
-                        {data?.surveydata[1]?.ques_title_json}
-                      </div>
-
-                      {chat.incoming && chat.star ? (
-                        <Star className="listInline mb-0 mt-1" />
-                      ) : chat.star ? (
-                        <Star className="listInline mb-0 colorRatings" />
-                      ) : (
-                        ""
-                      )}
-                    </div>
-                  </div>
-                  {prevAnswer.q1 && (
-                    <div
-                      className="incomingMsgContent d-flex align-items-start justify-content-end mb-2"
-                      style={{ marginRight: "4%" }}
-                    >
-                      <div className="msg">{prevAnswer.q1}</div>
-                    </div>
-                  )}
-                </>
-              )}
-
-              {prevAnswer.q1 && (
-                <>
-                  <div
-                    className={
-                      "incomingMsg d-flex gap-20 align-items-start mb-2"
-                    }
-                  >
-                    <div className={userImg}>
-                      <img src={avatarImg} alt="" />
-                    </div>
-                    <div className={"incomingMsgContent"}>
-                      {/* <div className={chat.qtype? "incomingMsgContent" :" outgoingMsgContent" }> */}
-                      <div className="msg">
-                        {data?.surveydata[2]?.ques_title_json}
-                      </div>
-
-                      {chat.incoming && chat.star ? (
-                        <Star className="listInline mb-0 mt-1" />
-                      ) : chat.star ? (
-                        <Star className="listInline mb-0 colorRatings" />
-                      ) : (
-                        ""
-                      )}
-                    </div>
-                  </div>
-                  {prevAnswer.q2 && (
-                    <div
-                      className="incomingMsgContent d-flex align-items-start justify-content-end mb-2"
-                      style={{ marginRight: "4%" }}
-                    >
-                      <div className="msg">{prevAnswer.q2}</div>
-                    </div>
-                  )}
-                </>
-              )}
-
-              {prevAnswer.q2 && (
-                <>
-                  <div
-                    className={
-                      "incomingMsg d-flex gap-20 align-items-start mb-2"
-                    }
-                  >
-                    <div className={userImg}>
-                      <img src={avatarImg} alt="" />
-                    </div>
-                    <div className={"incomingMsgContent"}>
-                      {/* <div className={chat.qtype? "incomingMsgContent" :" outgoingMsgContent" }> */}
-                      <div className="msg">
-                        {data?.surveydata[3]?.ques_title_json}
-                      </div>
-
-                      {chat.incoming && chat.star ? (
-                        <Star className="listInline mb-0 mt-1" />
-                      ) : chat.star ? (
-                        <Star className="listInline mb-0 colorRatings" />
-                      ) : (
-                        ""
-                      )}
-                    </div>
-                  </div>
-                  {prevAnswer.q3 && (
-                    <div
-                      className="incomingMsgContent d-flex align-items-start justify-content-end mb-2"
-                      style={{ marginRight: "4%" }}
-                    >
-                      <div className="msg">{prevAnswer.q3}</div>
-                    </div>
-                  )}
-                </>
-              )}
-
-              {prevAnswer.q3 && (
-                <>
-                  <div
-                    className={
-                      "incomingMsg d-flex gap-20 align-items-start mb-2"
-                    }
-                  >
-                    <div className={userImg}>
-                      <img src={avatarImg} alt="" />
-                    </div>
-                    <div className={"incomingMsgContent"}>
-                      {/* <div className={chat.qtype? "incomingMsgContent" :" outgoingMsgContent" }> */}
-                      <div className="msg">
-                        {data?.surveydata[4]?.ques_title_json}
-                      </div>
-
-                      {chat.incoming && chat.star ? (
-                        <Star className="listInline mb-0 mt-1" />
-                      ) : chat.star ? (
-                        <Star className="listInline mb-0 colorRatings" />
-                      ) : (
-                        ""
-                      )}
-                    </div>
-                  </div>
-                  {prevAnswer.q4 && (
-                    <div
-                      className="incomingMsgContent d-flex align-items-start justify-content-end mb-2"
-                      style={{ marginRight: "4%" }}
-                    >
-                      <div className="msg">{prevAnswer.q4}</div>
-                    </div>
-                  )}
-                </>
-              )}
-
-              {prevAnswer.q4 && (
-                <>
-                  <div
-                    className={
-                      "incomingMsg d-flex gap-20 align-items-start mb-2"
-                    }
-                  >
-                    <div className={userImg}>
-                      <img src={avatarImg} alt="" />
-                    </div>
-                    <div className={"incomingMsgContent"}>
-                      {/* <div className={chat.qtype? "incomingMsgContent" :" outgoingMsgContent" }> */}
-                      <div className="msg">
-                        {data?.surveydata[5]?.ques_title_json}
-                      </div>
-
-                      {chat.incoming && chat.star ? (
-                        <Star className="listInline mb-0 mt-1" />
-                      ) : chat.star ? (
-                        <Star className="listInline mb-0 colorRatings" />
-                      ) : (
-                        ""
-                      )}
-                    </div>
-                  </div>
-                  {prevAnswer.q5 && (
-                    <div
-                      className="incomingMsgContent d-flex align-items-start justify-content-end mb-2"
-                      style={{ marginRight: "4%" }}
-                    >
-                      <div className="msg">{prevAnswer.q5}</div>
-                    </div>
-                  )}
-                </>
-              )}
-
-              {prevAnswer.q5 && (
-                <>
-                  <div
-                    className={
-                      "incomingMsg d-flex gap-20 align-items-start mb-2"
-                    }
-                  >
-                    <div className={userImg}>
-                      <img src={avatarImg} alt="" />
-                    </div>
-                    <div className={"incomingMsgContent"}>
-                      {/* <div className={chat.qtype? "incomingMsgContent" :" outgoingMsgContent" }> */}
-                      <div className="msg">
-                        {data?.surveydata[6]?.ques_title_json}
-                      </div>
-
-                      {chat.incoming && chat.star ? (
-                        <Star className="listInline mb-0 mt-1" />
-                      ) : chat.star ? (
-                        <Star className="listInline mb-0 colorRatings" />
-                      ) : (
-                        ""
-                      )}
-                    </div>
-                  </div>
-                  {prevAnswer.q6 && (
-                    <div
-                      className="incomingMsgContent d-flex align-items-start justify-content-end mb-2"
-                      style={{ marginRight: "4%" }}
-                    >
-                      <div className="msg">{prevAnswer.q6}</div>
-                    </div>
-                  )}
-                </>
-              )}
-
-              {prevAnswer.q6 && (
-                <>
-                  <div
-                    className={
-                      "incomingMsg d-flex gap-20 align-items-start mb-2"
-                    }
-                  >
-                    <div className={userImg}>
-                      <img src={avatarImg} alt="" />
-                    </div>
-                    <div className={"incomingMsgContent"}>
-                      {/* <div className={chat.qtype? "incomingMsgContent" :" outgoingMsgContent" }> */}
-                      <div className="msg">
-                        {data?.surveydata[7]?.ques_title_json}
-                      </div>
-
-                      {chat.incoming && chat.star ? (
-                        <Star className="listInline mb-0 mt-1" />
-                      ) : chat.star ? (
-                        <Star className="listInline mb-0 colorRatings" />
-                      ) : (
-                        ""
-                      )}
-                    </div>
-                  </div>
-                  {prevAnswer.q7 && (
-                    <div
-                      className="incomingMsgContent d-flex align-items-start justify-content-end mb-2"
-                      style={{ marginRight: "4%" }}
-                    >
-                      <div className="msg">{prevAnswer.q7}</div>
-                    </div>
-                  )}
-                </>
-              )}
-
-
-            {data?.surveydata.length !== questionNumber ?
-              <div>
-                {data?.surveydata[questionNumber]?.qtype == "mcq" ? (
+            </div>
+            {dataLength - 1 !== questionNumber - 2 ? (
+              <div style={{borderTop:"1px solid #ccc", padding:"10px 0px"}}>
+                {question?.qtype == "mcq" ? (
                   <div
                     style={{
                       display: "flex",
@@ -348,27 +208,27 @@ const SurveyChatBox = () => {
                     }}
                   >
                     <div>
-                      <button
-                        style={{ border: "none" }}
-                        onClick={() => {
-                          setQ2("haryana");
-                          setPrevAnswer({
-                            ...prevAnswer,
-                            [`q${questionNumber}`]: "haryana",
-                          });
-                          setQuestionNumber(questionNumber + 1);
-                        }}
-                      >
-                        haryana
-                      </button>
+                      {
+                        <button
+                          className="option-button"
+                          onClick={() => {
+                            setAnswers({
+                              ...answers,
+                              [`q${questionNumber}`]: "haryana",
+                            });
+                            setQuestionNumber(questionNumber + 1);
+                          }}
+                        >
+                          haryana
+                        </button>
+                      }
                     </div>
                     <div>
                       <button
-                        style={{ border: "none" }}
+                      className="option-button"
                         onClick={() => {
-                          setQ2("punjab");
-                          setPrevAnswer({
-                            ...prevAnswer,
+                          setAnswers({
+                            ...answers,
                             [`q${questionNumber}`]: "punjab",
                           });
                           setQuestionNumber(questionNumber + 1);
@@ -379,11 +239,10 @@ const SurveyChatBox = () => {
                     </div>
                     <div>
                       <button
-                        style={{ border: "none" }}
+                      className="option-button"
                         onClick={() => {
-                          setQ2("delhi");
-                          setPrevAnswer({
-                            ...prevAnswer,
+                          setAnswers({
+                            ...answers,
                             [`q${questionNumber}`]: "delhi",
                           });
                           setQuestionNumber(questionNumber + 1);
@@ -394,11 +253,10 @@ const SurveyChatBox = () => {
                     </div>
                     <div>
                       <button
-                        style={{ border: "none" }}
+                      className="option-button"
                         onClick={() => {
-                          setQ2("UP");
-                          setPrevAnswer({
-                            ...prevAnswer,
+                          setAnswers({
+                            ...answers,
                             [`q${questionNumber}`]: "UP",
                           });
                           setQuestionNumber(questionNumber + 1);
@@ -408,37 +266,68 @@ const SurveyChatBox = () => {
                       </button>
                     </div>
                   </div>
-                ) : data?.surveydata[questionNumber]?.qtype == "radio" ? <>
-                  <div style={{display:"flex", width:"200px", justifyContent:"space-evenly"}}>
-                    <div style={{display:"flex", width:"50%" , justifyContent:"center"}}>
-                      <input type="radio" value="yes" name="yesNO" onChange={() => {
-                        setQ2("UP");
-                        setPrevAnswer({
-                          ...prevAnswer,
-                          [`q${questionNumber}`]: "YES",
-                        });
-                        setQuestionNumber(questionNumber + 1);
-                      }} />
-                      <label style={{fontSize:"20px" , marginLeft:"10px"}}>YES</label>
-                    </div>
-                    <div style={{display:"flex", width:"50%" , justifyContent:"center"}}>
-                      <input type="radio" value="no" name="yesNO" onChange={() => {
-                        setQ2("UP");
-                        setPrevAnswer({
-                          ...prevAnswer,
-                          [`q${questionNumber}`]: "NO",
-                        });
-                        setQuestionNumber(questionNumber + 1);
-                      }} />
-                      <label style={{fontSize:"20px", marginLeft:"10px"}}>NO</label>
+                ) : question?.qtype == "radio" ? (
+                  <div>
+                    <div
+                      style={{
+                        display: "flex",
+                        width: "200px",
+                        justifyContent: "space-evenly",
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: "flex",
+                          width: "50%",
+                          justifyContent: "center",
+                        }}
+                      >
+                        <input
+                          type="radio"
+                          value="yes"
+                          name="yesNO"
+                          onChange={() => {
+                            setAnswers({
+                              ...answers,
+                              [`q${questionNumber}`]: "YES",
+                            });
+                            setQuestionNumber(questionNumber + 1);
+                          }}
+                        />
+                        <label style={{ fontSize: "20px", marginLeft: "10px" }}>
+                          YES
+                        </label>
+                      </div>
+                      <div
+                        style={{
+                          display: "flex",
+                          width: "50%",
+                          justifyContent: "center",
+                        }}
+                      >
+                        <input
+                          type="radio"
+                          value="no"
+                          name="yesNO"
+                          onChange={() => {
+                            setAnswers({
+                              ...answers,
+                              [`q${questionNumber}`]: "NO",
+                            });
+                            setQuestionNumber(questionNumber + 1);
+                          }}
+                        />
+                        <label style={{ fontSize: "20px", marginLeft: "10px" }}>
+                          NO
+                        </label>
+                      </div>
                     </div>
                   </div>
-
-                </> : (
+                ) : (
                   <div className="chatType">
                     <input
                       value={answer}
-                      onChange={(e) => setAnswer(e.target.value)}
+                      onChange={(e) => handleChange(e)}
                       type="text"
                       className="form-control transInput"
                       placeholder="Type Here..."
@@ -451,8 +340,21 @@ const SurveyChatBox = () => {
                     </button>
                   </div>
                 )}
-              </div> : <button>submit your response</button>}
-            </div>
+              </div>
+            ) : (
+              <div>
+                <button
+                  style={{
+                    padding: "10px 20px",
+                    border: "none",
+                    fontSize: "18px",
+                  }}
+                  onClick={handleSubmit}
+                >
+                  Submit Your Response
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </section>
