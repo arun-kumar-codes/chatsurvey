@@ -10,6 +10,8 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 const SurveyChatBox = () => {
   const [alldata, setAllData] = useState();
+  const [logicJson,setLogicJson] = useState(null)
+  console.log(logicJson, 'logicjson',typeof logicJson)
   const [data, dataSet] = useState();
   const [dataLength, SetDataLength] = useState();
   const [answer, setAnswer] = useState();
@@ -27,17 +29,52 @@ const SurveyChatBox = () => {
   useEffect(() => {
     async function fetchMyAPI() {
       let response = await axios.get(
-        "http://developers.frameanalytics.com/api/question/JIwZkAfZLcQ7LzwrGJLS"
+        "http://developers.frameanalytics.com/thesurveypoint/api/question/RHWWGWljYBIEdGp1CsD5"
       );
+    // data for logic
+    let duplicate =  []
+    response?.data?.surveydata?.map((val,ind) => {
+       if(val?.logic_json){
+          duplicate.push(JSON.parse(val?.logic_json).IF[0])
+       }
+    }) 
+    setLogicJson(duplicate)    
+// now all logic stored 
       setAllData(response.data.surveydata);
       SetDataLength(response?.data?.surveydata.length);
       setQuestion(response?.data?.surveydata[questionNumber - 1]);
+
+      // different logic 
+    let logic = response?.data?.surveydata[questionNumber-2]?.logic_json ? JSON.parse(response?.data?.surveydata[questionNumber-2].logic_json).IF[0] : null
+    console.log(logic,'logic of q ',questionNumber-2)
+     let desigredAns;
+    if(logic?.value)
+    {
+      if(logic.value === answer)
+      {
+        console.log('if executed')
+        let newVal = response.data.surveydata.splice(0, questionNumber-1);
+        desigredAns = response.data.surveydata.filter((value) => value?.id?.toString() === logic?.jumpto?.toString())
+        newVal.push(desigredAns[0]);
+        dataSet(newVal);
+        console.log(newVal,'newVla')
+      }
+      else{
+        console.log('else executed')
+        let data = response.data.surveydata.splice(0, questionNumber);
+        dataSet(data);
+      }
+    }
+    else{
+      console.log('outer executed')
       let data = response.data.surveydata.splice(0, questionNumber);
       dataSet(data);
     }
+ setAnswer('')
+    }
     fetchMyAPI();
   }, [questionNumber]);
-
+  
   const scrollToMyRef = () => {
     const scroll =
       messagesEndRef.current.scrollHeight - messagesEndRef.current.clientHeight;
@@ -51,7 +88,7 @@ const SurveyChatBox = () => {
         ...answers,
         [question.ques_custom_no]: answer,
       });
-      setAnswer("");
+      // setAnswer("");
     }
   };
 
@@ -175,10 +212,10 @@ const SurveyChatBox = () => {
                           className="incomingMsgContent d-flex align-items-start justify-content-end mb-2"
                           style={{ marginRight: "4%" }}
                         >
-                          <img
+                          {/* <img
                             src={typingGif}
                             style={{ width: "100px", height: "50px" }}
-                          />
+                          /> */}
                         </div>
                       )}
 
@@ -284,14 +321,15 @@ const SurveyChatBox = () => {
                       >
                         <input
                           type="radio"
-                          value="yes"
+                          value="1"
                           name="yesNO"
-                          onChange={() => {
+                          onChange={(e) => {
                             setAnswers({
                               ...answers,
                               [`q${questionNumber}`]: "YES",
                             });
                             setQuestionNumber(questionNumber + 1);
+                            setAnswer(e.target.value);
                           }}
                         />
                         <label style={{ fontSize: "20px", marginLeft: "10px" }}>
@@ -307,14 +345,15 @@ const SurveyChatBox = () => {
                       >
                         <input
                           type="radio"
-                          value="no"
+                          value="0"
                           name="yesNO"
-                          onChange={() => {
+                          onChange={(e) => {
                             setAnswers({
                               ...answers,
                               [`q${questionNumber}`]: "NO",
                             });
                             setQuestionNumber(questionNumber + 1);
+                            setAnswer(e.target.value);
                           }}
                         />
                         <label style={{ fontSize: "20px", marginLeft: "10px" }}>
