@@ -7,10 +7,11 @@ import OptionBox from "../generic/OptionBox";
 import avatarImg from "../assets/chat1.png";
 import typingGif from "../assets/typing.gif";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 const SurveyChatBox = () => {
   const [alldata, setAllData] = useState();
   const [logicJson,setLogicJson] = useState(null)
+  const [errror, setError] = useState(null)
   const [data, dataSet] = useState();
   const [dataLength, SetDataLength] = useState();
   const [answer, setAnswer] = useState();
@@ -18,9 +19,13 @@ const SurveyChatBox = () => {
   console.log(answers, 'answers of the qn')
   const [questionNumber, setQuestionNumber] = useState(1);
   const [question, setQuestion] = useState(1);
+  console.log(question, 'questionType')
   const [typing, setSettyping] = useState({});
   const navigate = useNavigate();
   const messagesEndRef = useRef(null);
+  const [searchParams] = useSearchParams()
+  const paramId = searchParams.get('id')
+  // /surveryChat?id=ASDFASDGASDFGAS (need to redirect url like this)
 
   const userImg = classNames({
     userImg: chat.qtype === "stextbox",
@@ -28,9 +33,20 @@ const SurveyChatBox = () => {
 
   useEffect(() => {
     async function fetchMyAPI() {
-      let response = await axios.get(
-        "http://developers.frameanalytics.com/thesurveypoint/api/question/RHWWGWljYBIEdGp1CsD5"
-      );
+      let response
+      try
+      {
+        response = await axios.get(
+          `http://developers.frameanalytics.com/thesurveypoint/api/question/${paramId ? paramId :'RHWWGWljYBIEdGp1CsD5'}`
+        );
+      }
+      catch(error)
+      {
+      if(error.response.data)
+      {
+        setError(error.response.data.status)
+      }
+      }
     // data for logic
     let duplicate =  []
     response?.data?.surveydata?.map((val,ind) => {
@@ -54,8 +70,10 @@ const SurveyChatBox = () => {
       {
         let newVal = response.data.surveydata.splice(0, questionNumber-1);
         desigredAns = response.data.surveydata.filter((value) => value?.id?.toString() === logic?.jumpto?.toString())
+        setQuestion(desigredAns[0]);
         newVal.push(desigredAns[0]);
         dataSet(newVal);
+        
       }
       else{
         let data = response.data.surveydata.splice(0, questionNumber);
@@ -161,6 +179,10 @@ const SurveyChatBox = () => {
                 }}
                 ref={messagesEndRef}
               >
+                {
+                  errror &&
+                  <h2>{errror}</h2>
+                }
                 {data?.map((q, index) => {
                   return (
                     <>
