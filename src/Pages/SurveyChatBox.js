@@ -11,11 +11,11 @@ import { useNavigate } from "react-router-dom";
 const SurveyChatBox = () => {
   const [alldata, setAllData] = useState();
   const [logicJson,setLogicJson] = useState(null)
-  console.log(logicJson, 'logicjson',typeof logicJson)
   const [data, dataSet] = useState();
   const [dataLength, SetDataLength] = useState();
   const [answer, setAnswer] = useState();
   const [answers, setAnswers] = useState({});
+  console.log(answers, 'answers of the qn')
   const [questionNumber, setQuestionNumber] = useState(1);
   const [question, setQuestion] = useState(1);
   const [typing, setSettyping] = useState({});
@@ -52,21 +52,17 @@ const SurveyChatBox = () => {
     {
       if(logic.value === answer)
       {
-        console.log('if executed')
         let newVal = response.data.surveydata.splice(0, questionNumber-1);
         desigredAns = response.data.surveydata.filter((value) => value?.id?.toString() === logic?.jumpto?.toString())
         newVal.push(desigredAns[0]);
         dataSet(newVal);
-        console.log(newVal,'newVla')
       }
       else{
-        console.log('else executed')
         let data = response.data.surveydata.splice(0, questionNumber);
         dataSet(data);
       }
     }
     else{
-      console.log('outer executed')
       let data = response.data.surveydata.splice(0, questionNumber);
       dataSet(data);
     }
@@ -150,7 +146,6 @@ const SurveyChatBox = () => {
         });
         setAnswer("");
     };
-
     return (
     <div>
       <section className="chatSection">
@@ -212,10 +207,10 @@ const SurveyChatBox = () => {
                           className="incomingMsgContent d-flex align-items-start justify-content-end mb-2"
                           style={{ marginRight: "4%" }}
                         >
-                          {/* <img
+                          <img
                             src={typingGif}
                             style={{ width: "100px", height: "50px" }}
-                          /> */}
+                          />
                         </div>
                       )}
 
@@ -236,7 +231,8 @@ const SurveyChatBox = () => {
             </div>
             {dataLength - 1 !== questionNumber - 2 ? (
               <div style={{borderTop:"1px solid #ccc", padding:"10px 0px"}}>
-                {question?.qtype == "mcq" ? (
+                {question?.qtype == "mcq" ? 
+                (
                   <div
                     style={{
                       display: "flex",
@@ -244,64 +240,29 @@ const SurveyChatBox = () => {
                       justifyContent: "space-evenly",
                     }}
                   >
-                    <div>
+                    {
+                      JSON.parse(question.ans_json_data).answer.map((val,index) => {
+                        return(
+                          <div>
                       {
                         <button
                           className="option-button"
                           onClick={() => {
                             setAnswers({
                               ...answers,
-                              [`q${questionNumber}`]: "haryana",
+                              [`q${questionNumber}`]: val,
                             });
                             setQuestionNumber(questionNumber + 1);
+                            setAnswer(val);
                           }}
                         >
-                          haryana
+                          {val}
                         </button>
                       }
                     </div>
-                    <div>
-                      <button
-                      className="option-button"
-                        onClick={() => {
-                          setAnswers({
-                            ...answers,
-                            [`q${questionNumber}`]: "punjab",
-                          });
-                          setQuestionNumber(questionNumber + 1);
-                        }}
-                      >
-                        punjab
-                      </button>
-                    </div>
-                    <div>
-                      <button
-                      className="option-button"
-                        onClick={() => {
-                          setAnswers({
-                            ...answers,
-                            [`q${questionNumber}`]: "delhi",
-                          });
-                          setQuestionNumber(questionNumber + 1);
-                        }}
-                      >
-                        delhi
-                      </button>
-                    </div>
-                    <div>
-                      <button
-                      className="option-button"
-                        onClick={() => {
-                          setAnswers({
-                            ...answers,
-                            [`q${questionNumber}`]: "UP",
-                          });
-                          setQuestionNumber(questionNumber + 1);
-                        }}
-                      >
-                        Up
-                      </button>
-                    </div>
+                        )
+                      })
+                    }
                   </div>
                 ) : question?.qtype == "radio" ? (
                   <div>
